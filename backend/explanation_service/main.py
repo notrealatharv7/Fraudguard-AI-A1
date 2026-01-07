@@ -28,47 +28,71 @@ class ExplanationResponse(BaseModel):
 @app.post("/explain", response_model=ExplanationResponse)
 async def get_explanation(details: PredictionDetails):
     """Generates a human-readable explanation for a fraud prediction."""
-    prompt = create_prompt(details)
-    
     try:
-        result = explainer(
-            prompt,
-            max_length=100,
-            num_return_sequences=1,
-            pad_token_id=explainer.tokenizer.eos_token_id
-        )
-        explanation = result[0]['generated_text'].replace(prompt, "").strip()
+        # Use the improved prompt function that generates context-aware explanations
+        explanation = create_prompt(details)
         return ExplanationResponse(explanation=explanation)
     except Exception as e:
         return ExplanationResponse(explanation=f"Could not generate explanation: {e}")
 
 def create_prompt(details: PredictionDetails) -> str:
-    """Creates a structured, few-shot prompt for the LLM to generate a high-quality explanation."""
+    """Creates a structured prompt for generating a context-aware explanation."""
     status = "fraudulent" if details.isFraud else "legitimate"
-
-    # Few-shot examples to guide the model
-    examples = """
-**Example 1 (Fraudulent):**
-- **Data:** High amount, high location distance, new merchant.
-- **Explanation:** This transaction is considered high-risk because it involves a large amount at a location far from the user's typical area and with a merchant they have not used before.
-
-**Example 2 (Legitimate):**
-- **Data:** Normal amount, low location distance, frequent merchant.
-- **Explanation:** This transaction appears to be safe. The amount is consistent with the user's spending habits, it occurred at a familiar location, and it's with a frequently used merchant.
-"""
-
-    # The actual prompt for the current transaction
-    current_transaction_prompt = f"""
-**Current Transaction:**
-- **Status:** {status}
-- **Risk Score:** {details.riskScore*100:.0f}%
-- **Key Factors:** Amount deviation is {details.transactionAmountDeviation:.2f}, time anomaly is {details.timeAnomaly:.2f}, location distance is {details.locationDistance:.1f}km, merchant novelty is {details.merchantNovelty:.2f}, and transaction frequency is {details.transactionFrequency:.1f}.
-- **Explanation:**"""
-
-    # Combine the role, examples, and current transaction into a single prompt
-    full_prompt = f"You are a fraud analyst. Your task is to provide a brief, professional explanation for a transaction's fraud status based on the provided data.\n\n{examples}\n\n{current_transaction_prompt}"
     
-    return full_prompt
+    # Analyze the actual transaction factors
+    factors = []
+    if details.transactionAmountDeviation > 0.5:
+        factors.append(f"high amount deviation ({details.transactionAmountDeviation:.2f})")
+    elif details.transactionAmountDeviation < 0.2:
+        factors.append(f"normal amount deviation ({details.transactionAmountDeviation:.2f})")
+    
+    if details.locationDistance > 50:
+        factors.append(f"very far location ({details.locationDistance:.1f}km)")
+    elif details.locationDistance > 20:
+        factors.append(f"distant location ({details.locationDistance:.1f}km)")
+    elif details.locationDistance < 5:
+        factors.append(f"nearby location ({details.locationDistance:.1f}km)")
+    
+    if details.merchantNovelty > 0.7:
+        factors.append("new/unknown merchant")
+    elif details.merchantNovelty < 0.3:
+        factors.append("familiar merchant")
+    
+    if details.timeAnomaly > 0.6:
+        factors.append("unusual transaction time")
+    elif details.timeAnomaly < 0.3:
+        factors.append("normal transaction time")
+    
+    if details.transactionFrequency < 3:
+        factors.append("low transaction frequency")
+    elif details.transactionFrequency > 10:
+        factors.append("high transaction frequency")
+    
+    factors_text = ", ".join(factors) if factors else "mixed indicators"
+    
+    # Generate explanation based on status and factors
+    if details.isFraud:
+        explanation = f"This transaction is flagged as {status} (risk: {details.riskScore*100:.0f}%) because it shows {factors_text}."
+        if details.transactionAmountDeviation > 0.5:
+            explanation += " The transaction amount significantly deviates from the user's typical spending patterns."
+        if details.locationDistance > 20:
+            explanation += " The location is far from where the user typically makes transactions."
+        if details.merchantNovelty > 0.7:
+            explanation += " The merchant is unfamiliar, which increases fraud risk."
+        if details.timeAnomaly > 0.6:
+            explanation += " The transaction occurred at an unusual time."
+    else:
+        explanation = f"This transaction appears {status} (risk: {details.riskScore*100:.0f}%) based on {factors_text}."
+        if details.transactionAmountDeviation < 0.3:
+            explanation += " The amount is consistent with the user's normal spending behavior."
+        if details.locationDistance < 10:
+            explanation += " The transaction occurred at a familiar location."
+        if details.merchantNovelty < 0.4:
+            explanation += " The merchant is known and frequently used by the user."
+        if details.timeAnomaly < 0.4:
+            explanation += " The transaction timing aligns with typical user patterns."
+    
+    return explanation
 
 @app.get("/health")
 async def health_check():

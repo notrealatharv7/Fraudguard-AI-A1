@@ -180,12 +180,27 @@ def get_ai_explanation(transaction: TransactionInput, is_fraud: bool, risk_score
     }
     
     try:
-        response = requests.post(url, json=payload, timeout=10) # 10-second timeout
+        # Increased timeout to 30 seconds to handle model generation time
+        response = requests.post(url, json=payload, timeout=30)
         response.raise_for_status() # Raise an exception for bad status codes (4xx or 5xx)
-        return response.json().get("explanation")
-    except requests.exceptions.RequestException as e:
-        print(f"[ERROR] Could not connect to explanation service: {e}")
+        result = response.json().get("explanation")
+        if result:
+            return result
+        else:
+            print("[WARNING] Explanation service returned empty explanation")
+            return None
+    except requests.exceptions.Timeout:
+        print("[ERROR] Explanation service timeout (exceeded 30 seconds)")
+        return "AI explanation service is taking too long to respond."
+    except requests.exceptions.ConnectionError as e:
+        print(f"[ERROR] Could not connect to explanation service at {url}: {e}")
         return "AI explanation service is currently unavailable."
+    except requests.exceptions.RequestException as e:
+        print(f"[ERROR] Error calling explanation service: {type(e).__name__}: {e}")
+        return "AI explanation service encountered an error."
+    except Exception as e:
+        print(f"[ERROR] Unexpected error getting explanation: {type(e).__name__}: {e}")
+        return None
 
 if __name__ == "__main__":
     import uvicorn

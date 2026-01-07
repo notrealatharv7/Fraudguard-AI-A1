@@ -315,11 +315,16 @@ class _FraudDetectionScreenState extends State<FraudDetectionScreen> {
           Text('Confidence: $riskPercentage%', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: color)),
           if (prediction.explanation != null && prediction.explanation!.isNotEmpty) ...[
             const SizedBox(height: 24),
-            const Divider(),
+            Divider(color: color.withOpacity(0.3)),
             const SizedBox(height: 16),
-            Text('AI Analysis', style: Theme.of(context).textTheme.titleMedium),
+            Text('AI Analysis', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: color)),
             const SizedBox(height: 8),
-            Text(prediction.explanation!, style: Theme.of(context).textTheme.bodyMedium),
+            Text(prediction.explanation!, 
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: isFraud 
+                    ? Theme.of(context).colorScheme.onErrorContainer
+                    : const Color(0xFF065F46), // Dark green for readability on light green background
+                )),
           ],
         ],
       ),
