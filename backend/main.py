@@ -34,11 +34,14 @@ app.add_middleware(
 model_fast = None
 model_accurate = None
 
-# Explanation service URL (Docker / Railway safe)
+# Explanation service URL
+# - Local/Docker: http://explanation_service:8001/explain
+# - Railway: set EXPLANATION_SERVICE_URL in Railway Variables
 EXPLANATION_SERVICE_URL = os.getenv(
     "EXPLANATION_SERVICE_URL",
-    "http://explanation_service:8001/explain"
+    "https://fraudguard-ai-m3-production-619d.up.railway.app"
 )
+
 
 # # Model paths - works both locally and in Docker
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
