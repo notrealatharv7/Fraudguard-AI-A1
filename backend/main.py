@@ -40,16 +40,14 @@ EXPLANATION_SERVICE_URL = os.getenv(
     "http://explanation_service:8001/explain"
 )
 
-# Model paths - works both locally and in Docker
-def get_model_path(filename):
-    """Get model path, trying relative first (Docker), then absolute (local)."""
-    if os.path.exists(f"ml/{filename}"):
-        return f"ml/{filename}"
-    return os.path.join(os.path.dirname(os.path.dirname(__file__)), "ml", filename)
+# # Model paths - works both locally and in Docker
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-FAST_MODEL_PATH = get_model_path("model_fast.pkl")
-ACCURATE_MODEL_PATH = get_model_path("model_accurate.pkl")
-FRAUD_HISTORY_FILE = "fraud_history.json"
+FAST_MODEL_PATH = os.path.join(BASE_DIR, "ml", "model_fast.pkl")
+ACCURATE_MODEL_PATH = os.path.join(BASE_DIR, "ml", "model_accurate.pkl")
+
+FRAUD_HISTORY_FILE = os.path.join(BASE_DIR, "fraud_history.json")
+
 
 # Pydantic model for request input
 class TransactionInput(BaseModel):
