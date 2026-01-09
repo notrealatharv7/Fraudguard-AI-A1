@@ -86865,7 +86865,7 @@ vi(a){return this.aqC(a)},
 aqC(a){var s=0,r=A.S(t.qG),q,p=2,o=[],n,m,l,k,j,i,h,g,f,e,d,c,b
 var $async$vi=A.T(function(a0,a1){if(a0===1){o.push(a1)
 s=p}for(;;)switch(s){case 0:p=4
-n=A.i5("http://localhost:8000/predict",0,null)
+n=A.i5("https://fraudguard-ai-m3-production.up.railway.app/predict",0,null)
 j=t.N
 j=A.at(["Content-Type","application/json"],j,j)
 s=7
