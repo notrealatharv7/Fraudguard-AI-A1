@@ -1,9 +1,10 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+import os
 
 app = FastAPI(
     title="Explanation AI Service",
-    description="Generates explanations for fraud predictions.",
+    description="Lightweight explanation generator for fraud predictions",
     version="1.0.0"
 )
 
@@ -20,36 +21,39 @@ class PredictionDetails(BaseModel):
 class ExplanationResponse(BaseModel):
     explanation: str
 
-@app.post("/explain", response_model=ExplanationResponse)
-async def get_explanation(details: PredictionDetails):
-    explanation = create_prompt(details)
-    return ExplanationResponse(explanation=explanation)
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
 
-def create_prompt(details: PredictionDetails) -> str:
+@app.post("/explain", response_model=ExplanationResponse)
+async def explain(details: PredictionDetails):
     status = "fraudulent" if details.isFraud else "legitimate"
 
-    factors = []
+    reasons = []
+
     if details.transactionAmountDeviation > 0.5:
-        factors.append("high amount deviation")
+        reasons.append("unusually high transaction amount")
     if details.locationDistance > 20:
-        factors.append("unusual location")
+        reasons.append("transaction from a distant location")
     if details.merchantNovelty > 0.7:
-        factors.append("new merchant")
+        reasons.append("new or unfamiliar merchant")
     if details.timeAnomaly > 0.6:
-        factors.append("unusual time")
+        reasons.append("unusual transaction time")
+    if details.transactionFrequency > 10:
+        reasons.append("abnormally high transaction frequency")
 
-    factors_text = ", ".join(factors) if factors else "normal transaction patterns"
+    if not reasons:
+        reasons.append("normal spending behavior")
 
-    return (
-        f"This transaction is classified as {status} with a risk score of "
-        f"{details.riskScore*100:.0f}%. "
-        f"The decision is based on {factors_text}."
+    explanation = (
+        f"This transaction was classified as {status} "
+        f"with a risk score of {details.riskScore * 100:.1f}%. "
+        f"The decision was based on: {', '.join(reasons)}."
     )
 
-@app.get("/health")
-async def health_check():
-    return {"status": "ok"}
+    return ExplanationResponse(explanation=explanation)
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    port = int(os.getenv("PORT", 8001))
+    uvicorn.run(app, host="0.0.0.0", port=port)
