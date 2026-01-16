@@ -39,8 +39,9 @@ model_accurate = None
 # - Railway: set EXPLANATION_SERVICE_URL in Railway Variables
 EXPLANATION_SERVICE_URL = os.getenv(
     "EXPLANATION_SERVICE_URL",
-    "https://fraudguard-ai-m3-production-619d.up.railway.app"
+    "https://fraudguard-ai-a1-production.up.railway.app/explain"
 )
+
 
 
 # # Model paths - works both locally and in Docker
