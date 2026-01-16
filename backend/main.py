@@ -178,16 +178,22 @@ def get_ai_explanation(transaction: TransactionInput, is_fraud: bool, risk_score
     }
 
     try:
-        response = requests.post(EXPLANATION_SERVICE_URL, json=payload, timeout=30)
+        response = requests.post(
+            EXPLANATION_SERVICE_URL,
+            json=payload,
+            timeout=60
+        )
         response.raise_for_status()
         return response.json().get("explanation")
+
     except Exception as e:
-    print("====== EXPLANATION SERVICE DEBUG ======")
-    print("URL:", EXPLANATION_SERVICE_URL)
-    print("ERROR TYPE:", type(e))
-    print("ERROR MESSAGE:", e)
-    print("======================================")
-    return f"Explanation error: {str(e)}"
+        print("====== EXPLANATION SERVICE DEBUG ======")
+        print("URL:", EXPLANATION_SERVICE_URL)
+        print("ERROR TYPE:", type(e))
+        print("ERROR MESSAGE:", e)
+        print("======================================")
+        return f"Explanation error: {str(e)}"
+
 
 
 if __name__ == "__main__":
