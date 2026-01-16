@@ -168,14 +168,14 @@ async def predict_fraud(transaction: TransactionInput):
 
 def get_ai_explanation(transaction: TransactionInput, is_fraud: bool, risk_score: float) -> Optional[str]:
     payload = {
-        "transactionAmount": transaction.transactionAmount,
-        "transactionAmountDeviation": transaction.transactionAmountDeviation,
-        "timeAnomaly": transaction.timeAnomaly,
-        "locationDistance": transaction.locationDistance,
-        "merchantNovelty": transaction.merchantNovelty,
-        "transactionFrequency": transaction.transactionFrequency,
-        "isFraud": is_fraud,
-        "riskScore": risk_score
+        "transactionAmount": float(transaction.transactionAmount),
+        "transactionAmountDeviation": float(transaction.transactionAmountDeviation),
+        "timeAnomaly": float(transaction.timeAnomaly),
+        "locationDistance": float(transaction.locationDistance),
+        "merchantNovelty": float(transaction.merchantNovelty),
+        "transactionFrequency": int(transaction.transactionFrequency),
+        "isFraud": bool(is_fraud),                 # 🔑 FIX
+        "riskScore": float(risk_score)             # 🔑 FIX
     }
 
     try:
@@ -190,10 +190,12 @@ def get_ai_explanation(transaction: TransactionInput, is_fraud: bool, risk_score
     except Exception as e:
         print("====== EXPLANATION SERVICE DEBUG ======")
         print("URL:", EXPLANATION_SERVICE_URL)
+        print("PAYLOAD:", payload)
         print("ERROR TYPE:", type(e))
         print("ERROR MESSAGE:", e)
         print("======================================")
         return f"Explanation error: {str(e)}"
+
 
 
 
